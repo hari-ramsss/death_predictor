@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Death Predictor App</title>
+
+  <style>
+    /* ---------- BASIC LAYOUT ---------- */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(to bottom, #f5f5f5, #ddd);
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 10px; }
+
+    form {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      display: inline-block;
+      margin-bottom: 30px;
+    }
+    label      { display: block; margin: 10px 0 5px; }
+    select,
+    input      { padding: 5px; width: 220px; margin-bottom: 10px; }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #333;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background: #555; }
+
+    #result { margin-top: 20px; font-size: 18px; font-weight: bold; }
+
+    /* ---------- ANIMATION STAGE ---------- */
+    #stage {
+      margin: 40px auto;
+      width: 800px;
+      height: 300px;
+      position: relative;
+      background: linear-gradient(#87CEEB 60%, #98FB98 60%);
+      border: 3px solid #8B4513;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    #stage::before {               /* ground strip */
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: #8B7355;
+    }
+
+    /* ---------- PERSON ---------- */
+    #person {
+      position: absolute;
+      bottom: 80px;       /* sits on ground strip */
+      left: 50px;
+      width: 60px;
+      height: 120px;
+      transition: all 3s ease-in-out;
+      z-index: 10;
+    }
+    .person-emoji {
+      font-size: 60px;
+      display: block;
+      transition: all 2s ease;
+    }
+    @keyframes walk {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-5px); }
+    }
+    .walking { animation: walk .6s infinite; }
+
+    /* ---------- COFFIN ---------- */
+    #coffin {
+      position: absolute;
+      bottom: 80px;
+      right: 100px;
+      width: 160px;
+      height: 80px;
+      background: linear-gradient(145deg, #4a4a4a, #2c2c2c);
+      border: 3px solid #1a1a1a;
+      border-radius: 20px 20px 10px 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.5);
+    }
+    #coffin::before {              /* lid */
+      content: '';
+      position: absolute;
+      top: -8px; left: -5px; right: -5px;
+      height: 25px;
+      background: linear-gradient(145deg, #5a5a5a, #3c3c3c);
+      border: 2px solid #1a1a1a;
+      border-radius: 25px 25px 5px 5px;
+    }
+    #coffin::after {               /* skull emoji */
+      content: '☠️';
+      position: absolute;
+      top: -55px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 36px;
+    }
+    .coffin-cross {
+      position: absolute;
+      top: 15px; left: 50%;
+      transform: translateX(-50%);
+      color: #888; font-size: 20px;
+    }
+
+    /* ---------- EXTRA DECOR ---------- */
+    .flowers {
+      position: absolute;
+      bottom: 60px;
+      left: 20%;
+      font-size: 24px;
+      opacity: 0;
+      transition: opacity 2s ease;
+    }
+    .flowers.show { opacity: 1; }
+
+    .headstone {
+      position: absolute;
+      bottom: 120px;
+      right: 50px;
+      width: 40px;
+      height: 60px;
+      background: #666;
+      border-radius: 20px 20px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      opacity: 0;
+      transition: opacity 3s ease;
+    }
+    .headstone.show { opacity: 1; }
+
+    /* ---------- FINAL POSES ---------- */
+    @keyframes lieDown {
+      0%   { transform: rotate(0)   scale(1); }
+      50%  { transform: rotate(45deg) scale(.9); }
+      100% { transform: rotate(90deg) scale(.8) translateY(20px); }
+    }
+    .lying  { animation: lieDown 2s forwards; }
+
+    @keyframes fadeOut {
+      0%   { opacity: 1; }
+      100% { opacity: .3; }
+    }
+    .fading { animation: fadeOut 2s forwards; }
+  </style>
+</head>
+
+<body>
+  <h1>💀 Death Predictor App</h1>
+
+  <form id="lifeForm">
+    <label>Name:</label>
+    <input type="text" id="name" required />
+
+    <label>Age:</label>
+    <input type="number" id="age" min="1" required />
+
+    <label>Diet Preference:</label>
+    <select id="diet">
+      <option value="plant">Whole-food Plant-based / Vegan</option>
+      <option value="med">Mediterranean / Balanced</option>
+      <option value="lowcarb">Low-carb / High-protein</option>
+      <option value="average">Standard Average Diet</option>
+      <option value="junk">Highly Processed / Junk Food</option>
+    </select>
+
+    <label>Exercise:</label>
+    <select id="exercise">
+      <option value="regular">Regular</option>
+      <option value="sometimes">Sometimes</option>
+      <option value="never">Never</option>
+    </select>
+
+    <br />
+    <button type="submit">Predict</button>
+  </form>
+
+  <div id="result"></div>
+
+  <div id="stage">
+    <div id="person"><span class="person-emoji">🚶‍♂️</span></div>
+    <div id="coffin"><div class="coffin-cross">✟</div></div>
+    <div class="flowers">🌹🌻🌹</div>
+    <div class="headstone">🪦</div>
+  </div>
+
+  <script>
+    /* ---------- DOM ELEMENTS ---------- */
+    const form       = document.getElementById('lifeForm');
+    const resultEl   = document.getElementById('result');
+    const person     = document.getElementById('person');
+    const personEmoji= document.querySelector('.person-emoji');
+    const flowers    = document.querySelector('.flowers');
+    const headstone  = document.querySelector('.headstone');
+
+    /* ---------- CONSTANTS ---------- */
+    const DIET_FACTORS = {
+      plant:    7,   // whole-food / vegan
+      med:      5,   // mediterranean
+      lowcarb:  2,   // low-carb / high-protein
+      average:  0,   // standard
+      junk:    -10   // highly processed
+    };
+
+    /* ---------- SUBMIT HANDLER ---------- */
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      /* ----- INPUTS ----- */
+      const name   = document.getElementById('name').value.trim() || 'User';
+      const age    = +document.getElementById('age').value;
+      const diet   = document.getElementById('diet').value;
+      const exer   = document.getElementById('exercise').value;
+
+      /* ----- RESET PREVIOUS ANIMATION STATE ----- */
+      person.style.left = '50px';
+      person.style.transform = 'none';
+      personEmoji.className = 'person-emoji';
+      personEmoji.textContent = '🚶‍♂️';
+      flowers.classList.remove('show');
+      headstone.classList.remove('show');
+      person.style.opacity = 1;
+
+      /* ----- LIFE-EXPECTANCY MODEL ----- */
+      let expectancy = 80;                     // base
+      expectancy += DIET_FACTORS[diet];        // diet impact
+
+      if (exer === 'regular')   expectancy += 5;
+      else if (exer === 'never') expectancy -= 5;
+
+      /* clamp minimum expectancy */
+      expectancy = Math.max(expectancy, age + 1);
+
+      const daysLeft = Math.max(0, (expectancy - age) * 365);
+
+      /* ----- DISPLAY RESULT ----- */
+      resultEl.innerHTML =
+        `🧮 <strong>${name}</strong>'s Estimated Life Expectancy: <b>${expectancy} years</b><br>` +
+        `⏳ Estimated Days Left: <b>${daysLeft.toLocaleString()}</b>`;
+
+      /* ----- ANIMATION LOGIC ----- */
+      const progress     = Math.min(1, age / expectancy); // 0 → 1
+      const travelSpace  = 580;                           // px to coffin
+      const moveDistance = progress * travelSpace;
+
+      personEmoji.classList.add('walking');
+
+      /* step 1: walk toward coffin */
+      setTimeout(() => {
+        person.style.left = `${50 + moveDistance}px`;
+
+        /* step 2: after walk completes */
+        setTimeout(() => {
+          personEmoji.classList.remove('walking');
+
+          /* CLOSE TO DEATH? */
+          if (daysLeft < 2000) {
+            /* transition to lying pose inside coffin */
+            personEmoji.textContent = '😵';
+            personEmoji.classList.add('lying');
+
+            /* show flowers & headstone, fade body */
+            setTimeout(() => {
+              flowers.classList.add('show');
+              headstone.classList.add('show');
+              personEmoji.classList.add('fading');
+            }, 2000);
+
+          } else {
+            /* still alive → stand still */
+            personEmoji.textContent = '🧍‍♂️';
+          }
+        }, 3000);  // time matches CSS walk transition
+      }, 500);      // small initial delay so walk animation is visible
+    });
+  </script>
+</body>
+</html>
